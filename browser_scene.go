@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"git.sr.ht/~adnano/go-gemini"
 	"github.com/irth/go-simple"
 	ui "github.com/irth/go-simple"
@@ -58,16 +60,18 @@ func (b *BrowserScene) fetch() error {
 }
 
 func (b *BrowserScene) renderSite() simple.Widget {
-	pos := ui.Pos(ui.Abs(100), ui.Step, ui.Abs(b.r.simple.ScreenWidth()-200), ui.Abs(25))
+	pos := ui.Pos(ui.Abs(100), ui.Step, ui.Abs(b.r.simple.ScreenWidth()-200), ui.Abs(60))
 	wl := ui.WidgetList{
 		ui.FontSize(32),
 		ui.Label(pos, " "),
 	}
-	for _, line := range b.gemtext {
+	for idx, line := range b.gemtext {
 		var widget simple.Widget
 		switch line := line.(type) {
 		case gemini.LineText:
 			widget = b.textWidget(pos, line)
+		case gemini.LineLink:
+			widget = b.linkWidget(pos, line, idx)
 		default:
 			continue
 		}
@@ -81,5 +85,18 @@ func (b *BrowserScene) textWidget(pos ui.Position, l gemini.LineText) simple.Wid
 	return ui.Paragraph(
 		pos,
 		l.String(),
+	)
+}
+
+func (b *BrowserScene) linkWidget(pos ui.Position, l gemini.LineLink, idx int) simple.Widget {
+	text := l.Name
+	if text == "" {
+		text = l.URL
+	}
+	return ui.Button(
+		fmt.Sprintf("link_%d", idx),
+		pos,
+		fmt.Sprintf("=> %s", text),
+		nil, // TODO: follow link onClick
 	)
 }
