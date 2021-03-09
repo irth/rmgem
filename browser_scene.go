@@ -65,15 +65,30 @@ func (b *BrowserScene) renderSite() simple.Widget {
 		ui.FontSize(32),
 		ui.Label(pos, " "),
 	}
+	wasButton := false
+	isButton := false
 	for idx, line := range b.gemtext {
+		wasButton = isButton
+		isButton = false
 		var widget simple.Widget
 		switch line := line.(type) {
 		case gemini.LineText:
 			widget = b.textWidget(pos, line)
 		case gemini.LineLink:
 			widget = b.linkWidget(pos, line, idx)
+			isButton = true
+		case gemini.LineHeading1:
+			widget = b.headingWidget(pos, 1, line.String())
+		case gemini.LineHeading2:
+			widget = b.headingWidget(pos, 2, line.String())
+		case gemini.LineHeading3:
+			widget = b.headingWidget(pos, 3, line.String())
 		default:
 			continue
+		}
+		if wasButton && !isButton {
+			// insert padding
+			wl = append(wl, ui.FontSize(16), ui.Label(pos, " "), ui.FontSize(32))
 		}
 		wl = append(wl, widget)
 	}
@@ -99,4 +114,22 @@ func (b *BrowserScene) linkWidget(pos ui.Position, l gemini.LineLink, idx int) s
 		fmt.Sprintf("=> %s", text),
 		nil, // TODO: follow link onClick
 	)
+}
+
+func (b *BrowserScene) headingWidget(pos ui.Position, level int, text string) simple.Widget {
+	size := 32
+	switch level {
+	case 3:
+		size = 38
+	case 2:
+		size = 48
+	case 1:
+		size = 64
+
+	}
+	return simple.WidgetList{
+		ui.FontSize(size),
+		ui.Paragraph(pos, text),
+		ui.FontSize(32),
+	}
 }
