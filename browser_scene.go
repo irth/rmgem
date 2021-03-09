@@ -53,10 +53,21 @@ func (b *BrowserScene) Render() (ui.Widget, error) {
 
 	return ui.WidgetList{
 		ui.Justify(ui.Left),
+		b.hr(80),
 		ui.FontSize(42),
+		ui.Button(
+			"exit",
+			ui.Pos(ui.Abs(20), ui.Abs(20), ui.Abs(70), ui.Abs(70)),
+			"[X]",
+			func(a *ui.App, button *ui.ButtonWidget) error {
+				// this scene will clear screen and call os.Exit(0)
+				b.r.sceneStack.Replace(ExitScene{})
+				return nil
+			},
+		),
 		ui.TextInput(
 			"address",
-			ui.Pos(ui.Abs(100), ui.Abs(100), ui.Abs(b.r.simple.ScreenWidth()-250-5), ui.Abs(55)),
+			ui.Pos(ui.Abs(100), ui.Abs(30), ui.Abs(b.r.simple.ScreenWidth()-250-5), ui.Abs(55)),
 			b.url,
 			func(a *ui.App, t *ui.TextInputWidget, value string) error {
 				b.url = value
@@ -65,8 +76,8 @@ func (b *BrowserScene) Render() (ui.Widget, error) {
 		),
 		ui.Button(
 			"go",
-			ui.Pos(ui.Abs(b.r.simple.ScreenWidth()-150), ui.Same, ui.Abs(50), ui.Abs(55)),
-			"Go",
+			ui.Pos(ui.Abs(b.r.simple.ScreenWidth()-130), ui.Abs(25), ui.Abs(90), ui.Abs(70)),
+			"[Go]",
 			func(a *ui.App, button *ui.ButtonWidget) error {
 				err := b.fetch()
 				if err != nil {
@@ -79,10 +90,7 @@ func (b *BrowserScene) Render() (ui.Widget, error) {
 		// Displaying user generated content using paragraph is unsafe, because AFAIK ] cannot be escaped.
 		// Newlines should not be a problem, as each newline in Gemini generates a new widget.
 		b.renderSite(),
-		ui.Label(
-			ui.Pos(ui.Abs(0), ui.Abs(b.r.simple.ScreenHeight()-140), ui.Abs(b.r.simple.ScreenWidth()), ui.Abs(55)),
-			"______________________________________________________________________________________",
-		),
+		b.hr(b.r.simple.ScreenHeight() - 140),
 		ui.FontSize(40),
 		prev,
 		next,
@@ -111,6 +119,16 @@ func (b *BrowserScene) nextPage() {
 func (b *BrowserScene) previousPage() {
 	if b.currentPage > 0 {
 		b.currentPage--
+	}
+}
+
+func (b *BrowserScene) hr(y int) simple.Widget {
+	return ui.WidgetList{
+		ui.FontSize(32),
+		ui.Label(
+			ui.Pos(ui.Abs(0), ui.Abs(y), ui.Abs(b.r.simple.ScreenWidth()), ui.Abs(55)),
+			"______________________________________________________________________________________",
+		),
 	}
 }
 
