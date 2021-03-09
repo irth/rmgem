@@ -11,7 +11,7 @@ type RMGem struct {
 
 func main() {
 	app := &RMGem{}
-	app.sceneStack = &ui.SceneStack{&BrowserScene{app}}
+	app.sceneStack = &ui.SceneStack{NewBrowserScene(app, "gemini://irth.pl/")}
 	app.simple = ui.NewApp(app.sceneStack)
 	app.simple.RunForever()
 }
