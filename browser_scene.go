@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/url"
 	"strings"
 
 	"git.sr.ht/~adnano/go-gemini"
@@ -26,7 +28,7 @@ func NewBrowserScene(r *RMGem, url string) simple.Scene {
 		gemtext:     nil,
 		pages:       nil,
 		currentPage: 0,
-		pageHeight:  30,
+		pageHeight:  20,
 	}
 	return b
 }
@@ -79,7 +81,7 @@ func (b *BrowserScene) Render() (ui.Widget, error) {
 			ui.Pos(ui.Abs(b.r.simple.ScreenWidth()-130), ui.Abs(25), ui.Abs(90), ui.Abs(70)),
 			"[Go]",
 			func(a *ui.App, button *ui.ButtonWidget) error {
-				err := b.fetch()
+				err := b.fetch(b.url)
 				if err != nil {
 					panic(err)
 				}
@@ -97,17 +99,34 @@ func (b *BrowserScene) Render() (ui.Widget, error) {
 	}, nil
 }
 
-func (b *BrowserScene) fetch() error {
+func (b *BrowserScene) fetch(newUrl string) error {
+	u := newUrl
+	if b.url != "" {
+		new, err := url.Parse(newUrl)
+		if err != nil {
+			return fmt.Errorf("while parsing new url: %w", err)
+		}
+		base, err := url.Parse(b.url)
+		if err != nil {
+			return fmt.Errorf("while parsing base url: %w", err)
+		}
+		u = base.ResolveReference(new).String()
+	}
+
+	b.url = u
 	var err error
 	b.currentPage = 0
 	b.gemtext, err = Fetch(b.url)
 	if err != nil {
 		b.gemtext = nil
 		b.pages = nil
+		if err != nil {
+			log.Println("Fetch error:", err.Error())
+		}
 		return err
 	}
 	b.pages = b.splitSite(b.gemtext)
-	return err
+	return nil
 }
 
 func (b *BrowserScene) nextPage() {
@@ -234,7 +253,11 @@ func (b *BrowserScene) linkWidget(pos ui.Position, l gemini.LineLink, idx int) s
 		fmt.Sprintf("link_%d", idx),
 		pos,
 		fmt.Sprintf("=> %s", text),
-		nil, // TODO: follow link onClick
+		func(a *ui.App, btn *ui.ButtonWidget) error {
+			b.fetch(l.URL)
+			// TODO: handle the error
+			return nil
+		},
 	)
 }
 

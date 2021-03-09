@@ -12,12 +12,12 @@ func Fetch(url string) (gemini.Text, error) {
 	client := gemini.Client{}
 
 	resp, err := client.Get(context.TODO(), url)
+	if err != nil {
+		return nil, fmt.Errorf("while making the Gemini request: %w", err)
+	}
 	if resp.Status == gemini.StatusRedirect || resp.Status == gemini.StatusPermanentRedirect {
 		// TODO: indicate in the UI that the redirect is happening, also avoid loops
 		return Fetch(resp.Meta)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("while making the Gemini request: %w", err)
 	}
 	defer resp.Body.Close()
 
