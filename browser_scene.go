@@ -64,14 +64,22 @@ func (b *BrowserScene) renderSite() simple.Widget {
 		ui.Label(pos, " "),
 	}
 	for _, line := range b.gemtext {
+		var widget simple.Widget
 		switch line := line.(type) {
 		case gemini.LineText:
-			wl = append(wl, ui.Paragraph(
-				pos,
-				line.String(),
-			))
+			widget = b.textWidget(pos, line)
+		default:
+			continue
 		}
+		wl = append(wl, widget)
 	}
 
 	return wl
+}
+
+func (b *BrowserScene) textWidget(pos ui.Position, l gemini.LineText) simple.Widget {
+	return ui.Paragraph(
+		pos,
+		l.String(),
+	)
 }
