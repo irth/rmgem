@@ -8,14 +8,14 @@ import (
 )
 
 func Fetch(url string) (gemini.Text, error) {
+	// TODO: implement UI for TOFU instead of trusting everything
 	client := gemini.Client{}
 
-	req, err := gemini.NewRequest(url)
-	if err != nil {
-		return nil, fmt.Errorf("in gemini.NewRequest: %w", err)
+	resp, err := client.Get(context.TODO(), url)
+	if resp.Status == gemini.StatusRedirect || resp.Status == gemini.StatusPermanentRedirect {
+		// TODO: indicate in the UI that the redirect is happening, also avoid loops
+		return Fetch(resp.Meta)
 	}
-
-	resp, err := client.Do(context.TODO(), req)
 	if err != nil {
 		return nil, fmt.Errorf("while making the Gemini request: %w", err)
 	}
