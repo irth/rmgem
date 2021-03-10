@@ -82,7 +82,7 @@ func (l *LayoutEngine) getDimensions(line gemini.Line) Dimensions {
 		}
 	}()
 	switch line.(type) {
-	case gemini.LineText:
+	case gemini.LineText, gemini.LineListItem:
 		return l.Text
 
 	case gemini.LineHeading1:
@@ -112,7 +112,7 @@ func (l LayoutEngine) wrapLines(text string) []string {
 
 func (l LayoutEngine) estimateLines(line gemini.Line) int {
 	switch line := line.(type) {
-	case gemini.LineText:
+	case gemini.LineText, gemini.LineListItem:
 		if line.String() == "" {
 			return 0
 		}
@@ -132,8 +132,8 @@ func (l LayoutEngine) estimateLines(line gemini.Line) int {
 
 func (l LayoutEngine) getWidget(pos ui.Position, line gemini.Line, idx int, followUrl func(url string)) ui.Widget {
 	switch line := line.(type) {
-	case gemini.LineText:
-		return l.textWidget(pos, line)
+	case gemini.LineText, gemini.LineListItem:
+		return l.textWidget(pos, line.String())
 
 	case gemini.LineHeading1, gemini.LineHeading2, gemini.LineHeading3:
 		// TODO: wordwrap headings and links
@@ -148,8 +148,8 @@ func (l LayoutEngine) getWidget(pos ui.Position, line gemini.Line, idx int, foll
 
 }
 
-func (l LayoutEngine) textWidget(pos ui.Position, line gemini.LineText) ui.Widget {
-	wrapped := l.wrapLines(line.String())
+func (l LayoutEngine) textWidget(pos ui.Position, line string) ui.Widget {
+	wrapped := l.wrapLines(line)
 
 	wl := ui.WidgetList{}
 
