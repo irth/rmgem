@@ -11,8 +11,8 @@ type RMGem struct {
 
 func main() {
 	app := &RMGem{}
-	bs := NewBrowserScene(app, "gemini://irth.pl/a.gmi")
-	bs.(*BrowserScene).fetch("gemini://gemini.circumlunar.space/")
+	bs := NewBrowserScene(app, "gemini://gemini.circumlunar.space/docs/specification.gmi")
+	bs.(*BrowserScene).fetch("gemini://gemini.circumlunar.space/docs/specification.gmi")
 	app.sceneStack = &ui.SceneStack{bs}
 
 	app.simple = ui.NewApp(app.sceneStack)

@@ -31,6 +31,10 @@ type Padding struct {
 	Bottom int
 }
 
+func (p Padding) Total() int {
+	return p.Top + p.Bottom
+}
+
 type LayoutEngine struct {
 	PageHeight int
 
@@ -192,7 +196,37 @@ func (l LayoutEngine) headingWidget(pos ui.Position, text string) ui.Widget {
 }
 
 func (l LayoutEngine) newPage(gemtext gemini.Text) Page {
-	return Page{LayoutEngine: l}
+	return Page{LayoutEngine: l, Gemtext: gemtext}
+}
+
+func (l LayoutEngine) trySplitting(line gemini.Line, remainingSpace int) (gemini.Line, gemini.Line, bool) {
+	switch line := line.(type) {
+	case gemini.LineText:
+		wrapped := l.wrapLines(line.String())
+		lineCount := len(wrapped)
+		dim := l.getDimensions(line)
+		splitBoundary := (remainingSpace - dim.Padding.Total() + lineCount*dim.LineSpacing) /
+			(lineCount * (dim.LineSpacing + dim.LineHeight))
+		if splitBoundary <= 0 {
+			return nil, nil, false
+		}
+
+		if splitBoundary > lineCount {
+			log.Println("splitBoundary > lineCount: this shouldn't ever happen")
+			return nil, nil, false
+		}
+
+		firstText := wrapped[:splitBoundary]
+		secondText := wrapped[splitBoundary:]
+
+		return gemini.LineText(strings.Join(firstText, " ")),
+			gemini.LineText(strings.Join(secondText, " ")),
+			true
+
+	default:
+		return nil, nil, false
+	}
+
 }
 
 func (l LayoutEngine) splitPages(gemtext gemini.Text) []Page {
@@ -205,11 +239,25 @@ func (l LayoutEngine) splitPages(gemtext gemini.Text) []Page {
 		lineCount := l.estimateLines(line)
 		lineHeight := l.getDimensions(line).Total(lineCount)
 		if height+lineHeight > l.PageHeight {
-			log.Println("splitting page at height ", height-lineHeight)
+			log.Println("exceeded max page length at height", height)
+			remainingSpace := l.PageHeight - height
+			first, second, ok := l.trySplitting(line, remainingSpace)
+
+			if ok {
+				log.Println("solved by splitting the line")
+				page.Gemtext = append(page.Gemtext, first)
+				pages = append(pages, page)
+				page = l.newPage(gemini.Text{second})
+				height = l.getDimensions(second).Total(l.estimateLines(second))
+				fmt.Println(first.String(), "///", second.String())
+				continue
+			}
+
 			// if the element won't fit, start a new page
 			pages = append(pages, page)
 			page = l.newPage(nil)
 			height = 0
+
 		}
 		if lineHeight > l.PageHeight {
 			// if the element is too big to fit on a single page,
@@ -221,12 +269,15 @@ func (l LayoutEngine) splitPages(gemtext gemini.Text) []Page {
 		height += lineHeight
 		page.Gemtext = append(page.Gemtext, line)
 	}
-	h := 0
-	for _, ll := range page.Gemtext {
-		h += l.getDimensions(ll).Total(l.estimateLines(ll))
-	}
-	log.Println("last page height", h, l.PageHeight)
+
 	pages = append(pages, page)
+	for n, ll := range pages {
+		fmt.Println("")
+		fmt.Println("page", n)
+		fmt.Println("first:", ll.Gemtext[0].String())
+		fmt.Println("last:", ll.Gemtext[len(ll.Gemtext)-1].String())
+		fmt.Println("")
+	}
 	return pages
 }
 
