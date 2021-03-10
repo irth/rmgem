@@ -25,7 +25,6 @@ func Fetch(url string) (gemini.Text, error) {
 	if err != nil {
 		return nil, fmt.Errorf("while parsing the Gemini response")
 	}
-	fmt.Printf("parsed: %+v\n", parsed)
 
 	return parsed, nil
 }
